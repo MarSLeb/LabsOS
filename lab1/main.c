@@ -6,44 +6,78 @@
 #include <string.h>
 #include <dirent.h>
 #include <stdbool.h>
- 
-
-struct dirData{
-    char* name;
-
-};
+#include <sys/types.h>
+#include <sys/stat.h>
 
 
-void outLog(char* directory, bool flagA, bool flagL){
-    DIR *dp;
-    struct dirent *dent;
+
+void outLog(const char* directory, const bool flagA, const bool flagL){
+    //проверка наличия директории
+    DIR* dp;
+    struct dirent* dent;
     if ((dp = opendir(directory)) == NULL) {
         fprintf(stderr, "opendir: %s: %s\n", directory, strerror(errno));
     }
 
-    int total = 0;
-    struct dirData* data = calloc(1, sizeof(struct dirData));
-    int size = 0;
-    while ((dent = readdir(dp)) != NULL) {
-        data = realloc(data, (size * sizeof(struct dirData)) + (1 * sizeof(struct dirData)));
-        total += dent->d_type;
-        struct dirData d;
-        d.name = dent->d_name;
-        data[size] = d;
-        size += 1;
-    };
+    //запоминаем все имена (для вывода) и пути к ним(для проверки данных)
+    char** names = calloc(1, sizeof(char*));
+    char** paths = calloc(1, sizeof(char*));
+    int countNames = 0;
 
-    printf("total %i\n", total);
-    for (int i = 0; i < size; i++){
-        printf("%s\n", data[i].name);
+    while ((dent = readdir(dp)) != NULL) {
+        names = realloc(names, countNames * sizeof(char*) + (1 * sizeof(char*)));
+        paths = realloc(paths, countNames * sizeof(char*) + (1 * sizeof(char*)));
+        names[countNames] = dent->d_name;
+
+        struct stat stat;
+        if (directory[strlen(directory)] != '/'){
+            paths[countNames] = calloc(strlen(directory) + 1 + strlen(names[countNames]), sizeof(char));
+            memcpy(paths[countNames], directory, strlen(directory));
+            memcpy(paths[countNames] + strlen(directory), "/", 1);
+            memcpy(paths[countNames] + strlen(directory) + 1, names[countNames], strlen(names[countNames]));
+        } 
+        else{
+            paths[countNames] = calloc(strlen(directory) + strlen(names[countNames]), sizeof(char));
+            memcpy(paths[countNames], directory, strlen(directory));
+            memcpy(paths[countNames] + strlen(directory), names[countNames], strlen(names[countNames]));
+        }
+
+        countNames += 1;
+    }; 
+
+    // тут должна быть сортировка 
+
+    int total = 0;
+    struct stat* data = calloc(countNames, sizeof(struct stat));
+    for (int i = 0; i < countNames; i++){
+        stat(paths[i], &data[i]);
+        total += data[i].st_blocks;
     }
 
-    free(data);
+    if (flagL){
+        printf("total %i\n", total);
+    }
+    for (int i = 0; i < countNames; i++){
+        if (!flagA && (!strcmp(names[i], ".") || !strcmp(names[i], ".."))){
+            continue;
+        }
+        printf("%s\n", names[i]);
+    }
+    
+
+    //for (int i = 0; i < countNames; i++){
+    //    free(names[i]);
+    //    free(paths[i]);
+    //}
+    free(paths);
+    free(names);
     closedir(dp);
-}
+} 
+
 
 
 int main (int argc, char** argv) {
+    //обработка наличия флагов
     int rez = 0;
     bool flagA = false, flagL = false; 
 	while ((rez = getopt(argc, argv, "al")) != -1){
@@ -56,10 +90,14 @@ int main (int argc, char** argv) {
             flagL = true;
             break;
         }
-		case '?': printf("ls: invalid option\n"); break;
+		case '?': {
+            printf("ls: invalid option\n"); 
+            break;
+        }
 		} 
 	}
 
+    //обаботка поданынх директорий для простмотра
     char** directories = calloc(1, sizeof(char*));
     int size = 0;
     while (optind < argc) {
@@ -73,6 +111,7 @@ int main (int argc, char** argv) {
         size += 1;
     }
     
+    //вывод
     for (int i = 0; i < size; i++){
         if (size != 1){
             printf("%s:\n", directories[i]);
@@ -81,6 +120,7 @@ int main (int argc, char** argv) {
         if (size != 1){
             printf("\n");
         }
+        //free(directories[i]);
     }
 
     free(directories);
