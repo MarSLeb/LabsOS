@@ -111,8 +111,8 @@ void cuteOut(char* linkname, struct stat linkdata, char* name, struct stat data,
         
         printf("%s ", mode);
         printf("%*li ", lenNLinks, data.st_nlink);
-        printf("%*s ", lenUser, user);
-        printf("%*s ", lenGroup, group);
+        printf("%*s ", -lenUser, user);
+        printf("%*s ", -lenGroup, group);
         printf("%*li ", lenSize, data.st_size);
         printf("%s ", time);
         if (isHaveSpace(name)){
