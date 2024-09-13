@@ -95,21 +95,23 @@ void cuteOut(char* linkname, struct stat linkdata, char* name, struct stat data,
     char* color = d.color;
     char mode[11];
     strcpy(mode, d.mode);
-    
     if (flagL){
-        //представим, что getpwuid и getgrgid не могут выдать NULL
-        char* user = calloc(strlen(getpwuid(data.st_uid)->pw_name) + 1, sizeof(char));
+        char* user;
+        char* group;
         if(getpwuid(data.st_uid) == NULL){
+            user = calloc(256, sizeof(char));
             sprintf(user, "%i", data.st_uid);
         }
         else{
+            user = calloc(strlen(getpwuid(data.st_uid)->pw_name) + 1, sizeof(char));
             strcpy(user, getpwuid(data.st_uid)->pw_name); 
         }
-        char* group = calloc(strlen(getgrgid(data.st_gid)->gr_name) + 1, sizeof(char));
         if (getgrgid(data.st_gid) == NULL){
+            group = calloc(256, sizeof(char));
             sprintf(group, "%i", data.st_gid);
         }
         else{
+            group = calloc(strlen(getgrgid(data.st_gid)->gr_name) + 1, sizeof(char));
             strcpy(group, getgrgid(data.st_gid)->gr_name);
         }
         
@@ -245,10 +247,24 @@ void outLog(char* directory, const bool flagA, const bool flagL){
     //проход для определения ширины столбцов
     int maxLenUser = 0, maxLenGroup = 0, maxSize = 0, maxLinks = 0;
     for (int i = 0; i < countNames; i++){
-        char* user = calloc(strlen(getpwuid(data[i].file.st_uid)->pw_name) + 1, sizeof(char));
-        char* group = calloc(strlen(getgrgid(data[i].file.st_gid)->gr_name) + 1, sizeof(char));
-        strcpy(user, getpwuid(data[i].file.st_uid)->pw_name);
-        strcpy(group, getgrgid(data[i].file.st_gid)->gr_name);
+        char* user;
+        char* group;
+        if(getpwuid(data[i].file.st_uid) == NULL){
+            user = calloc(256, sizeof(char));
+            sprintf(user, "%i", data[i].file.st_uid);
+        }
+        else{
+            user = calloc(strlen(getpwuid(data[i].file.st_uid)->pw_name) + 1, sizeof(char));
+            strcpy(user, getpwuid(data[i].file.st_uid)->pw_name); 
+        }
+        if (getgrgid(data[i].file.st_gid) == NULL){
+            group = calloc(256, sizeof(char));
+            sprintf(group, "%i", data[i].file.st_gid);
+        }
+        else{
+            group = calloc(strlen(getgrgid(data[i].file.st_gid)->gr_name) + 1, sizeof(char));
+            strcpy(group, getgrgid(data[i].file.st_gid)->gr_name);
+        }
         int lenUser = strlen(user); 
         int lenGroup = strlen(group);
 
