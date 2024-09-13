@@ -99,14 +99,14 @@ void cuteOut(char* linkname, struct stat linkdata, char* name, struct stat data,
     if (flagL){
         //представим, что getpwuid и getgrgid не могут выдать NULL
         char* user = calloc(strlen(getpwuid(data.st_uid)->pw_name) + 1, sizeof(char));
-        if(getpwuid(data.st_uid)->pw_name == NULL){
+        if(getpwuid(data.st_uid) == NULL){
             sprintf(user, "%i", data.st_uid);
         }
         else{
             strcpy(user, getpwuid(data.st_uid)->pw_name); 
         }
         char* group = calloc(strlen(getgrgid(data.st_gid)->gr_name) + 1, sizeof(char));
-        if (getgrgid(data.st_gid)->gr_name == NULL){
+        if (getgrgid(data.st_gid) == NULL){
             sprintf(group, "%i", data.st_gid);
         }
         else{
