@@ -103,18 +103,25 @@ void cuteOut(char* linkname, struct stat linkdata, char* name, struct stat data,
         char* group = calloc(strlen(getgrgid(data.st_gid)->gr_name) + 1, sizeof(char));
         strcpy(group, getgrgid(data.st_gid)->gr_name);
 
-        char* time = calloc(strlen(ctime(&data.st_mtime)) + 1, sizeof(char));
-        strcpy(time, ctime(&data.st_mtime));
-        int s = strlen(time);
-        memcpy(time, time + 4, s - 4);
-        time[s - 9 - 4] = '\0';
+        char mtime[256];
+        long int t = data.st_mtime;
+        strftime(mtime, sizeof(mtime), "%Y", localtime(&t));
+        time_t mytime = time(NULL);
+        struct tm* now = localtime(&mytime);
+
+        if (mtime[strlen(mtime) - 1] != now->tm_year % 10 + '0'){
+            strftime(mtime, sizeof(mtime), "%h %d  %Y", localtime(&t));
+        }
+        else{
+            strftime(mtime, sizeof(mtime), "%h %d %H:%M", localtime(&t));
+        }
         
         printf("%s ", mode);
         printf("%*li ", lenNLinks, data.st_nlink);
         printf("%*s ", -lenUser, user);
         printf("%*s ", -lenGroup, group);
         printf("%*li ", lenSize, data.st_size);
-        printf("%s ", time);
+        printf("%s ", mtime);
         if (isHaveSpace(name)){
             printf("%s'%s'%s ", color, name, RESET);
         }
@@ -135,7 +142,6 @@ void cuteOut(char* linkname, struct stat linkdata, char* name, struct stat data,
 
         free(user);
         free(group);
-        free(time);
     }
     else{
         printf("%s%s%s  ", color, name, RESET);
