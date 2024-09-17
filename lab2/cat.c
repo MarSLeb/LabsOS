@@ -13,6 +13,7 @@ int lenInt(int num){
     }
     return len;
 }
+
 void sizeCount(bool* beforLineHaveEnter, int* count, char* filename, bool flagB, bool flagN){
     FILE* file = fopen(filename, "r");
     if (!file && filename != NULL){
@@ -24,7 +25,7 @@ void sizeCount(bool* beforLineHaveEnter, int* count, char* filename, bool flagB,
     size_t len = 0;
     ssize_t read;
     while ((read = getline(&line, &len, file)) != -1){
-        if (flagB && strcmp(line, "") && *beforLineHaveEnter){
+        if (flagB && strcmp(line, "\n") && strcmp(line, "") && *beforLineHaveEnter){
             (*count)++;
         }
         if (flagN && !flagB && *beforLineHaveEnter){
@@ -41,43 +42,55 @@ void sizeCount(bool* beforLineHaveEnter, int* count, char* filename, bool flagB,
     fclose(file);
 }
 
-void outLog (char* str, int* count, int sizeCount, bool flagB, bool flagN, bool flagE){
-    //FILE* file = fopen(filename, "r");
-    //if (!file && filename != NULL){
-    //    fprintf(stderr, "./mycat: %s: No such file or directory\n", filename);
-    //    return -1;
-    //}
-    //char *line = NULL;
-    //size_t len = 0;
-    //ssize_t read;
-    //int count = 1;
-    bool lastLine = true;
-    if (str[strlen(str) - 1] == '\n'){
-        str[strlen(str) - 1] = '\0';
-        lastLine = false;
+void outLog (char* filename, int* count, int sizeCount, bool* beforLineHaveEnter, 
+             bool flagB, bool flagN, bool flagE, bool lastFile){
+    FILE* file = fopen(filename, "r");
+    if (!file && filename != NULL){
+        fprintf(stderr, "./mycat: %s: No such file or directory\n", filename);
+        *count = -1;
+        return;
     }
-    if (flagB && strcmp(str, "")){
-        printf("    %*i  ", sizeCount, *count);
-        count++;
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t read;
+    while ((read = getline(&line, &len, file)) != -1){
+        bool haveEnter = false;
+        if (line[strlen(line) - 1] == '\n'){
+            line[strlen(line) - 1] = '\0';
+            haveEnter = true;
+        }
+        if (flagB && strcmp(line, "\n") && strcmp(line, "") && *beforLineHaveEnter){
+            printf("    %*i  ", sizeCount, *count);
+            (*count)++;
+        }
+        if (flagN && !flagB && *beforLineHaveEnter){
+            printf("    %*i  ", sizeCount, *count);
+            (*count)++;
+        }
+        printf("%s", line);
+        if (!haveEnter){
+            if (flagE && lastFile){
+                printf("$");
+            }
+            *beforLineHaveEnter = false;
+        }
+        else{
+            if (flagE){
+                printf("$");
+            }
+            printf("\n");
+            *beforLineHaveEnter = true;
+        }
     }
-    if (flagN && !flagB){
-        printf("    %*i  ", sizeCount, *count);
-        count++;
-    }
-    printf("%s", str);
-    if (flagE){
-        printf("$");
-    }
-    if (!lastLine){
-        printf("\n");
-    }
+    free(line);
+    fclose(file);
 }
 
 int main(int argc, char** argv){
     int rez = 0;
     bool flagN = false;
     bool flagB = false;
-    //bool flagE = false;
+    bool flagE = false;
 	while ((rez = getopt(argc, argv, "nbE")) != -1){
 		switch (rez) {
 		case 'n': { //нумерует все строки выходного файла, начиная с 1 
@@ -89,7 +102,7 @@ int main(int argc, char** argv){
             break;
         }
         case 'E': { //выводит в конце каждой строки символ $ 
-            //flagE = true;
+            flagE = true;
             break;
         }
 		case '?': {
@@ -103,9 +116,7 @@ int main(int argc, char** argv){
     int countFile = 0;
     while (optind < argc){ // подсчет и сохраниение всех файлов для чтения
         files[countFile] = calloc(strlen(argv[optind]) + 1, sizeof(char));
-        printf("%s\n", argv[optind]);
         strcpy(files[countFile], argv[optind]);
-        printf("%s\n", files[countFile]);
         countFile++;
         optind++;
     }
@@ -114,25 +125,18 @@ int main(int argc, char** argv){
     int countLine = 0;
     for (int i = 0; i < countFile; i++){
         sizeCount(&beforLineHaveEnter, &countLine, files[i], flagB, flagN);
-        printf("%i\n", countLine);
     }
 
-
-
-    //while (optind < argc) {
-    //    filename = calloc(strlen(argv[optind]) + 1, sizeof(char));
-    //    strcpy(filename, argv[optind]);
-    //    haveFile = true;
-    //    sizeCount(&realCountLine, &countLineWithFlag, filename, flagB, flagN);
-    //    if (countLineWithFlag == -1) {
-    //        return 1;
-    //    }
-    //    optind++;
-    //}
-    if (countFile != 0){
-        //outLog(files[0], lenInt(countLine), flagB, flagN, flagE);
+    int nowCount = 1;
+    beforLineHaveEnter = true;
+    for (int i = 0; i < countFile; i++){
+        outLog(files[i], &nowCount, lenInt(countLine), &beforLineHaveEnter, 
+               flagB, flagN, flagE, i == countFile - 1);
+        if (nowCount == -1){
+            return 1;
+        }
     }
-    else{
+    if (countFile == 0){
         puts("-- no --");
     }
 
