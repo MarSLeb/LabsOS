@@ -136,8 +136,28 @@ int main(int argc, char** argv){
             return 1;
         }
     }
+
     if (countFile == 0){
-        puts("-- no --");
+        int count = 1;
+        char *line = NULL;
+        size_t len;
+        while(getline(&line, &len, stdin) != -1) {
+            line[strlen(line) - 1] = '\0';
+            if (flagB && strcmp(line, "")){
+                printf("    %-5i  ", count);
+                count++;
+            }
+            if (flagN && !flagB){
+                printf("    %-5i  ", count);
+                count++;
+            }
+            printf("%s", line);
+            if (flagE){
+                printf("$");
+            }
+            printf("\n");
+        }
+        free(line);
     }
 
     for (int i = 0; i < countFile; i++){
