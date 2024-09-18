@@ -67,6 +67,9 @@ int outLog (char* filename, regex_t regex, bool manyFile){
         size_t n = 256;
         regmatch_t p[256] = {};
         int err = regexec(&regex, line, n, p, 0);
+        if (err == REG_NOMATCH){
+            continue;
+        }
         if (manyFile && !err){
             printf("%s: ", filename);
             search(line, regex);
@@ -93,7 +96,7 @@ int main(int argc, char** argv){
         reg[strlen(reg) - 1] = '\0';
     }
     int err = 0;
-    if ((err = regcomp(&regex, reg, REG_EXTENDED)) != 0){
+    if ((err = regcomp(&regex, reg, 0)) != 0){
         char errbuf[256];
         regerror(err, &regex, errbuf, 256);
         fprintf(stderr, "./mygrep: %s\n", errbuf);
@@ -116,7 +119,18 @@ int main(int argc, char** argv){
         char *line = NULL;
         size_t len;
         while(getline(&line, &len, stdin) != -1) {
-            search(line, regex);
+            size_t n = 256;
+            regmatch_t p[256] = {};
+            int err = regexec(&regex, line, n, p, 0);
+            if (err == REG_NOMATCH){
+                continue;
+            }
+            if (!err){
+                search(line, regex);
+            } 
+            else{
+                search(line, regex);
+            }
         }
         free(line);
     }
