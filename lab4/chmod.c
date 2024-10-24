@@ -16,46 +16,6 @@ bool isNum(char* str){
     }
     return true;
 }
-/*
-int permMask(char group, char mode){
-    if (group == 'u'){
-        if (mode == 'r') {return S_IRUSR;}
-        if (mode == 'w') {return S_IWUSR;}
-        if (mode == 'x') {return S_IXUSR;}
-    }
-    if (group == 'g'){
-        if (mode == 'r') {return S_IRGRP;}
-        if (mode == 'w') {return S_IWGRP;}
-        if (mode == 'x') {return S_IXGRP;}
-    }
-    if (group == 'o'){
-        if (mode == 'r') {return S_IROTH;}
-        if (mode == 'w') {return S_IWOTH;}
-        if (mode == 'x') {return S_IXOTH;}
-    }
-}
-
-mode_t compytingMode(mode_t mode, char sep, char group, bool r, bool w, bool x){
-    mode_t newMode = mode;
-    printf("-- %i\n", newMode);
-    if (sep == '+'){
-        newMode |= r ? permMask(group, r) : 0;
-        newMode |= w ? permMask(group, w) : 0;
-        newMode |= x ? permMask(group, x) : 0;
-    }
-    else if (sep == '-'){
-        newMode &= r ? ~permMask(group, r) : 0;
-        newMode &= w ? ~permMask(group, w) : 0;
-        newMode &= x ? ~permMask(group, x) : 0;
-    }
-    else if (sep == '='){
-        newMode = r ? newMode | permMask(group, r) : newMode & ~permMask(group, r);
-        newMode = w ? newMode | permMask(group, w) : newMode & ~permMask(group, w);
-        newMode = x ? newMode | permMask(group, x) : newMode & ~permMask(group, x);
-    }
-    printf("-- %i\n", newMode);
-    return newMode;
-}*/
 
 mode_t compytingMode(mode_t mode, char sep, char group, bool r, bool w, bool x){
     mode_t newMode = mode;
@@ -172,22 +132,22 @@ mode_t parsNumMode(mode_t fileMode, char* str){
 
 int match(char *string, char *pattern, regex_t *re){
     int status;
-    if ((status = regcomp( re, pattern, REG_EXTENDED)) != 0){
+    if ((status = regcomp(re, pattern, REG_EXTENDED)) != 0){
         return(status);
     }
-    status = regexec( re, string, 0, NULL, 0);
+    status = regexec(re, string, 0, NULL, 0);
     return(status);
 }
 
 int main(int argc, char** argv){
     if (argc < 2 || argc > 3){
-        fprintf(stderr, "myfork: missing operand\n");
+        fprintf(stderr, "mychmod: missing operand\n");
         return 1;
     }
 
     struct stat st;
     if (stat(argv[2], &st) == -1) {
-        fprintf(stderr, "myfrok: file is not exist");
+        fprintf(stderr, "mychmod: file is not exist");
         return 1;
     }
     mode_t mode = st.st_mode;
@@ -197,6 +157,7 @@ int main(int argc, char** argv){
     char* eqMode    = "[guoa]{0,3}=[rwx]{1,3}";
     char* numMode   = "[0-7]{3}";
 
+    regex_t re; 
 
     if (!isNum(argv[1])){
         regex_t re;   
@@ -228,7 +189,6 @@ int main(int argc, char** argv){
         }
     }
     else {
-        regex_t re; 
         if (match (argv[1], numMode,  &re) == 0){
             mode = parsNumMode(mode, argv[1]);
         }
@@ -242,5 +202,7 @@ int main(int argc, char** argv){
         fprintf(stderr, "mychmod: %d", errno);
         return 1;
     }
+
+    regfree(&re);
     return 0;
 }
